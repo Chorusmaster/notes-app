@@ -1,23 +1,46 @@
-import { useState } from 'react';
-import type { Note } from './types/note.ts';
+import { useState } from "react";
+import type { Note } from "./types/note.ts";
+import type { AddNoteResponse } from "./types/responce.ts";
 
-import Navbar from './components/Navbar';
-import SearchBar from './components/SearchBar';
-import CategoryTabs from './components/CategoryTabs';
+import Navbar from "./components/Navbar";
+import SearchBar from "./components/SearchBar";
+import CategoryTabs from "./components/CategoryTabs";
 
-import NoteCard from './components/NoteCard';
-import NewNoteCard from './components/NewNoteCard';
-import NoteEditor from './components/NoteEditor';
+import NoteCard from "./components/NoteCard";
+import NewNoteCard from "./components/NewNoteCard";
+import NoteEditor from "./components/NoteEditor";
 
-import Footer from './components/Footer';
+import Footer from "./components/Footer";
 
 function App() {
-  const [isEditing, setIsEditing] = useState(false);
+  const [editedNote, setEditedNote] = useState<null | Note | "new">(null);
   const [notes, setNotes] = useState<Note[]>([]);
 
-  const addNote = (note: Note) => {
-    setNotes(prev => [...prev, note]);
-  }
+  const addNote = (note: Note): AddNoteResponse => {
+    if (!note.title) {
+      return { success: false, error: "Title must not be empty" };
+    }
+    if (notes.some((n) => n.title == note.title)) {
+      return { success: false, error: "Title must be unique" };
+    }
+
+    setNotes((prev) => [...prev, note]);
+    setEditedNote(null);
+    return { success: true };
+  };
+
+  const updateNote = (updated: Note): void => {
+    setNotes((prev) => prev.map((n) => (n.id === updated.id ? updated : n)));
+    setEditedNote(null);
+  };
+
+  const deleteNote = (id: string) => {
+    setNotes((prev) => prev.filter((n) => n.id !== id));
+  };
+
+  const closeNoteEditor = () => {
+    setEditedNote(null);
+  };
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -36,13 +59,33 @@ function App() {
 
       <main className="flex-1 bg-surface">
         <div className="h-full px-4 sm:px-8 lg:px-16 py-18 grid gap-12 grid-cols-[repeat(auto-fill,minmax(20rem,1fr))]">
-          {isEditing ? 
-            <NoteEditor onClick={(note: Note) => {addNote(note); setIsEditing(false)}} /> : 
-            <NewNoteCard onClick={() => setIsEditing(true)} />
-          }
-          {notes.map(note => (
-            <NoteCard note={note} />
-          ))}
+          {editedNote == "new" ? (
+            <NoteEditor
+              onSave={(note: Note) => addNote(note)}
+              onCancel={closeNoteEditor}
+            />
+          ) : (
+            <NewNoteCard onClick={() => setEditedNote("new")} />
+          )}
+          {notes.map((note) =>
+            editedNote !== null &&
+            editedNote !== "new" &&
+            note.id == editedNote?.id ? (
+              <NoteEditor
+                key={note.id}
+                note={editedNote}
+                onSave={(note: Note) => updateNote(note)}
+                onCancel={closeNoteEditor}
+              />
+            ) : (
+              <NoteCard
+                key={note.id}
+                note={note}
+                onUpdate={() => setEditedNote(note)}
+                onDelete={() => deleteNote(note.id)}
+              />
+            ),
+          )}
         </div>
       </main>
 
