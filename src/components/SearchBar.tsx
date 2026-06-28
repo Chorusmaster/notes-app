@@ -9,7 +9,7 @@ function SearchBar() {
         ></img>
       </button>
       <input
-        className="flex-1 h-full bg-surface-elevated rounded-r-2xl pl-4 placeholder:text-text-muted focus:outline-none"
+        className="flex-1 h-full bg-surface-elevated rounded-r-2xl pl-4 placeholder:text-muted focus:outline-none"
         placeholder="Search..."
       ></input>
     </div>

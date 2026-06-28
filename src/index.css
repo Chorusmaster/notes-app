@@ -5,8 +5,12 @@
   --color-primary: oklch(51.1% 0.096 186.391);
   --color-secondary: oklch(70.4% 0.14 182.503);
   --color-secondary-hover: oklch(77.7% 0.152 181.912);
-  --color-muted: oklch(86.9% 0.022 252.894);
-  --color-on-primary: #ffffff;
+
+  --color-muted: oklch(55.4% 0.046 257.417);
+  --color-muted-light: oklch(70.4% 0.04 256.788);
+
+  --color-danger: oklch(57.7% 0.245 27.325);
+  --color-danger-hover: oklch(63.7% 0.237 25.331);
 
   /* Background */
   --color-surface: oklch(96.8% 0.007 247.896);
@@ -15,6 +19,7 @@
   /* Text */
   --color-text-primary: #000000;
   --color-text-secondary: oklch(20.8% 0.042 265.755);
+  --color-on-primary: #ffffff;
 
   /* Other */
   --color-card: #ffffff;
