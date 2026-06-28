@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import type { Note } from "./types/note.ts";
 import type { AddNoteResponse } from "./types/responce.ts";
 
@@ -15,6 +15,7 @@ import Footer from "./components/Footer";
 function App() {
   const [editedNote, setEditedNote] = useState<null | Note | "new">(null);
   const [notes, setNotes] = useState<Note[]>([]);
+  const [searchString, setSearchString] = useState("");
 
   const addNote = (note: Note): AddNoteResponse => {
     if (!note.title) {
@@ -42,6 +43,26 @@ function App() {
     setEditedNote(null);
   };
 
+  /** Sorts notes array by date */
+  const sortNotes = (notesList: Note[]) => {
+    return notesList.toSorted((a, b) => b.date.getTime()-a.date.getTime());
+  }
+
+  /** Filters notes array by search string */
+  const searchNotes = (notesList: Note[], searchStr: string) => {
+    const searchStrLower = searchStr.trim().toLowerCase();
+    if (!searchStrLower) return notesList;
+
+    return notesList.filter(
+      (n) => 
+        n.title.toLowerCase().includes(searchStrLower) 
+        || n.text.toLowerCase().includes(searchStrLower)
+    );
+  }
+
+  /** Notes filtered by search string and sorted by date */
+  const processedNotes = useMemo(() => sortNotes(searchNotes(notes, searchString)), [notes, searchString]);
+
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
@@ -51,7 +72,7 @@ function App() {
           <h1 className="text-6xl sm:text-7xl inline-block pb-4 font-semibold bg-gradient-primary bg-clip-text text-transparent">
             Notes App
           </h1>
-          <SearchBar />
+          <SearchBar value={searchString} onChange={(value: string) => setSearchString(value)} />
         </div>
 
         <CategoryTabs />
@@ -67,7 +88,7 @@ function App() {
           ) : (
             <NewNoteCard onClick={() => setEditedNote("new")} />
           )}
-          {notes.map((note) =>
+          {processedNotes.map((note) =>
             editedNote !== null &&
             editedNote !== "new" &&
             note.id == editedNote?.id ? (
