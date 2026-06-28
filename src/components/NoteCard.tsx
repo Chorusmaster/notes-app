@@ -19,7 +19,7 @@ function NoteCard({ note, onUpdate, onDelete }: NoteCardProps) {
     <div className="min-h-80 bg-card rounded-2xl shadow-sm transition-shadow p-6 flex flex-col">
       <h2 className="text-2xl mb-2">{note.title}</h2>
       <p className="flex-1 text-text-secondary">{note.text}</p>
-      <div className='flex justify-between w-full'>
+      <div className='flex justify-between w-full mt-2'>
         <div className='flex-1 flex'>
           <button 
             onClick={onUpdateClick}

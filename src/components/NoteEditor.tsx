@@ -23,7 +23,6 @@ function NoteEditor({ note, onSave, onCancel }: NoteEditorProps) {
   }
 
   const save = () => {
-    console.log(note);
     const result = onSave({
       id: note?.id ?? crypto.randomUUID(),
       title, 
