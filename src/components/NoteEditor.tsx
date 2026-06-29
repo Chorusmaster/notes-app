@@ -1,6 +1,10 @@
 import { useState } from "react";
+
 import type { Note } from "../types/note";
 import type { AddNoteResponse } from "../types/responce";
+import { isCategory, type Category } from "../models/categories.ts";
+
+import { CATEGORIES } from "../models/categories.ts";
 
 interface NoteEditorProps {
   note?: Note;
@@ -12,6 +16,7 @@ function NoteEditor({ note, onSave, onCancel }: NoteEditorProps) {
   const [title, setTitle] = useState(note?.title ?? "");
   const [text, setText] = useState(note?.text ??"");
   const [titleError, setTitleError] = useState("");
+  const [category, setCategory] = useState<Category>(CATEGORIES[0].value);
 
   const handleTitleChange: React.ChangeEventHandler<HTMLInputElement> = (e) => {
     setTitle(e.target.value);
@@ -22,9 +27,14 @@ function NoteEditor({ note, onSave, onCancel }: NoteEditorProps) {
     setText(e.target.value);
   }
 
+  const handleCategoryChange: React.ChangeEventHandler<HTMLSelectElement> = (e) => {
+    if(isCategory(e.target.value)) setCategory(e.target.value);
+  }
+
   const save = () => {
     const result = onSave({
       id: note?.id ?? crypto.randomUUID(),
+      category,
       title, 
       text, 
       date: note?.date ?? new Date()
@@ -67,29 +77,47 @@ function NoteEditor({ note, onSave, onCancel }: NoteEditorProps) {
         ">
       </textarea>
 
-      <div className="w-full flex justify-end gap-2">
-        <button 
-          onClick={() => onCancel()}
+      <div className="w-full flex justify-between">
+        <select 
+          value={category}
+          onChange={handleCategoryChange}
           className="
-            rounded-lg 
-            w-20 h-8 border-2
+            rounded-md 
+            w-24 h-8 border-2
             border-muted-light text-muted
-            hover:border-muted-light/60 hover:text-muted/60 transform duration-200
-            active:scale-98 cursor-pointer
-        ">
-          Cancel
-        </button>
-        <button 
-          onClick={save}
-          className="
-            rounded-lg 
-            bg-secondary hover:bg-secondary-hover transition 
-            text-on-primary 
-            w-20 h-8 
-            active:scale-98 cursor-pointer
-        ">
-          Ok
-        </button>
+            cursor-pointer
+            focus:outline-none focus:ring-1 focus:ring-primary/40
+          "
+        >
+          {CATEGORIES.map(({value, label}) => (
+            <option key={value} value={value}>{label}</option>
+          ))}
+        </select>
+        <div className="flex gap-2">
+          <button 
+            onClick={() => onCancel()}
+            className="
+              rounded-lg 
+              w-20 h-8 border-2
+              border-muted-light text-muted
+              hover:border-muted-light/60 hover:text-muted/60 transform duration-200
+              active:scale-98 cursor-pointer
+          ">
+            Cancel
+          </button>
+
+          <button 
+            onClick={save}
+            className="
+              rounded-lg 
+              bg-secondary hover:bg-secondary-hover transition 
+              text-on-primary 
+              w-20 h-8 
+              active:scale-98 cursor-pointer
+          ">
+            Ok
+          </button>
+        </div>
       </div>
     </div>
   );

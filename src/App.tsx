@@ -1,6 +1,9 @@
 import { useState, useMemo } from "react";
+
 import type { Note } from "./types/note.ts";
 import type { AddNoteResponse } from "./types/responce.ts";
+
+import type { Tab } from "./models/tabs.ts";
 
 import Navbar from "./components/Navbar";
 import SearchBar from "./components/SearchBar";
@@ -16,6 +19,7 @@ function App() {
   const [editedNote, setEditedNote] = useState<null | Note | "new">(null);
   const [notes, setNotes] = useState<Note[]>([]);
   const [searchString, setSearchString] = useState("");
+  const [activeTab, setActiveTab] = useState<Tab>("all");
 
   const addNote = (note: Note): AddNoteResponse => {
     if (!note.title) {
@@ -48,6 +52,12 @@ function App() {
     return notesList.toSorted((a, b) => b.date.getTime()-a.date.getTime());
   }
 
+  /** Filters notes array by active tab (category) */
+  const filterNotesByTab = (notesList: Note[], tab: Tab) => {
+    if (tab === "all") return notesList;
+    return notesList.filter(n => n.category === tab);
+  }
+
   /** Filters notes array by search string */
   const searchNotes = (notesList: Note[], searchStr: string) => {
     const searchStrLower = searchStr.trim().toLowerCase();
@@ -60,8 +70,15 @@ function App() {
     );
   }
 
-  /** Notes filtered by search string and sorted by date */
-  const processedNotes = useMemo(() => sortNotes(searchNotes(notes, searchString)), [notes, searchString]);
+  /** Notes filtered by search string, category and sorted by date */
+  const processedNotes = useMemo(
+    () => sortNotes(
+      filterNotesByTab(
+        searchNotes(notes, searchString), 
+      activeTab)
+    ), 
+    [notes, searchString, activeTab]
+  );
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -75,7 +92,7 @@ function App() {
           <SearchBar value={searchString} onChange={(value: string) => setSearchString(value)} />
         </div>
 
-        <CategoryTabs />
+        <CategoryTabs activeTab={activeTab} switchTab={(tab) => setActiveTab(tab)} />
       </header>
 
       <main className="flex-1 bg-surface">
