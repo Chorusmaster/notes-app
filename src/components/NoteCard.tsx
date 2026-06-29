@@ -46,7 +46,10 @@ function NoteCard({ note, onUpdate, onDelete }: NoteCardProps) {
             Delete
           </button>
         </div>
-        <div>{note.date.toLocaleDateString("uk-UA")}</div>
+        <div className="flex gap-4">
+          <p className="text-primary">{`#${note.category}`}</p>
+          <p>{note.date.toLocaleDateString("uk-UA")}</p>
+        </div>
       </div>
     </div>
   );
