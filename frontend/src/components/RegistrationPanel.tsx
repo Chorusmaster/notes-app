@@ -3,7 +3,6 @@ import { useState } from 'react';
 function RegistrationPanel() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [confirmedPassword, setConfirmedPassword] = useState("");
   const [action, setAction] = useState<"login" | "register">("login");
 
   const handleSubmit: React.MouseEventHandler<HTMLButtonElement> = (e) => {
@@ -29,31 +28,13 @@ function RegistrationPanel() {
         ">
         </input>
 
-        {action == "register" &&
-          (<>
-            <label htmlFor="password">Password</label>
-            <input 
-              name="password" 
-              id="password" 
-              type="password" 
-              value={password} 
-              onChange={(e) => setPassword(e.target.value)}
-              className="
-                border border-border rounded-lg 
-                mt-1 h-8 p-2 
-                focus:outline-none focus:ring-1 focus:ring-primary/40
-            ">
-            </input>
-          </>)
-        }
-
-        <label htmlFor="password" className='mt-2'>Password confirm</label>
+        <label htmlFor="password" className='mt-2'>Password</label>
         <input 
-          name="confirm" 
-          id="confirm" 
-          type="confirm" 
-          value={confirmedPassword} 
-          onChange={(e) => setConfirmedPassword(e.target.value)}
+          name="password" 
+          id="password" 
+          type="password" 
+          value={password} 
+          onChange={(e) => setPassword(e.target.value)}
           className="
             border border-border rounded-lg 
             mt-1 h-8 p-2 
