@@ -7,3 +7,11 @@ export interface Note {
   text: string,
   date: Date
 };
+
+export interface NoteResponse {
+  _id: string,
+  category: Tab,
+  title: string,
+  text: string,
+  date: string
+};

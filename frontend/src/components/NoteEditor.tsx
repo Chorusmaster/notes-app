@@ -8,7 +8,7 @@ import { CATEGORIES } from "../models/categories.ts";
 
 interface NoteEditorProps {
   note?: Note;
-  onSave: (note: Note) => AddNoteResponse | void;
+  onSave: (note: Note) => Promise<AddNoteResponse> | Promise<void>;
   onCancel: () => void
 };
 
@@ -31,8 +31,8 @@ function NoteEditor({ note, onSave, onCancel }: NoteEditorProps) {
     if(isCategory(e.target.value)) setCategory(e.target.value);
   }
 
-  const save = () => {
-    const result = onSave({
+  const save = async () => {
+    const result = await onSave({
       id: note?.id ?? crypto.randomUUID(),
       category,
       title, 

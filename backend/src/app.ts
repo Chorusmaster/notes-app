@@ -4,8 +4,21 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import type { RequestHandler } from "express";
 import { ObjectId } from 'mongodb';
+import cors from "cors";
+import cookieParser from "cookie-parser";
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const app = express();
+
+app.use(cors({
+  origin: "http://localhost:5173",
+  credentials: true,
+}));
+
+app.use(express.json());
+app.use(cookieParser());
 
 await client.connect();
 console.log("Database connected");
@@ -76,6 +89,11 @@ app.post('/login', async (req, res) => {
   res.send("Authorization successful");
 });
 
+app.post('/logout', async (req, res) => {
+  res.clearCookie("token");
+  res.send("Logout successful");
+});
+
 const authenticate: RequestHandler = (req, res, next) => {
   const token = req.cookies.token;
 
@@ -99,6 +117,20 @@ const authenticate: RequestHandler = (req, res, next) => {
   }
 };
 
+app.get("/auth/me", authenticate, async (req, res) => {
+  const user = await usersCollection.findOne(
+    { _id: new ObjectId(req.userId) },
+    { projection: { passwordHash: 0 } }
+  );
+
+  if (!user) {
+    res.status(404).send("User not found");
+    return;
+  }
+
+  res.json(user);
+});
+
 app.get('/notes', authenticate, async (req, res) => {
   const notes = await notesCollection.find({ userId: req.userId }).toArray();
   res.json(notes);
@@ -115,7 +147,7 @@ app.post('/notes', authenticate, async (req, res) => {
     }
   }
 
-  await notesCollection.insertOne({
+  const result = await notesCollection.insertOne({
     userId: req.userId,
     title: data.title,
     category: data.category,
@@ -123,7 +155,7 @@ app.post('/notes', authenticate, async (req, res) => {
     date: data.date
   });
 
-  res.send("Note successfully created");
+  res.json({id: result.insertedId.toString()});
 });
 
 app.put('/notes/:id', authenticate, async (req, res) => {
