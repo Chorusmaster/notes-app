@@ -1,12 +1,31 @@
 import { useState } from 'react';
+import { api } from '../api/api';
+import { isAxiosError } from 'axios';
 
-function RegistrationPanel() {
-  const [email, setEmail] = useState("");
+type RegistrationPanelProps = {
+  closeForm: () => void
+}
+
+function RegistrationPanel({closeForm}: RegistrationPanelProps) {
+  const [login, setLogin] = useState("");
   const [password, setPassword] = useState("");
   const [action, setAction] = useState<"login" | "register">("login");
+  const [error, setError] = useState("");
 
-  const handleSubmit: React.MouseEventHandler<HTMLButtonElement> = (e) => {
+  const handleSubmit: React.MouseEventHandler<HTMLButtonElement> = async (e) => {
     e.preventDefault();
+
+    try {
+      if (action == "register") {
+        await api.post("/register", {login, password});
+        closeForm();
+      } else {
+        await api.post("/login", {login, password});
+        closeForm();
+      }
+    } catch(e: unknown) {
+      setError("Something went wrong");
+    }
   }
 
   return (
@@ -14,13 +33,13 @@ function RegistrationPanel() {
       <div className='w-86 xl:w-[min(24%,32rem)] border-2 border-primary rounded-xl p-8 flex flex-col'>
         <h2 className='text-center text-2xl text-primary font-medium mb-4'>{ action == "login" ? "Log in" : "Register" }</h2>
 
-        <label htmlFor="email">E-mail</label>
+        <label htmlFor="login">Login</label>
         <input 
-          name="email" 
-          id="email" 
-          type="email" 
-          value={email} 
-          onChange={(e) => setEmail(e.target.value)}
+          name="login" 
+          id="login" 
+          type="text" 
+          value={login} 
+          onChange={(e) => setLogin(e.target.value)}
           className="
             border border-border rounded-lg 
             mt-1 mb-2 h-8 p-2 
@@ -51,6 +70,8 @@ function RegistrationPanel() {
         >
           {action === "login" ? "Don't have an account yet? Register" : "Already have an account? Log in"}
         </a>
+
+        {error && <p className='text-danger'>{error}</p>}
 
         <div className='flex justify-end'>
           <button 

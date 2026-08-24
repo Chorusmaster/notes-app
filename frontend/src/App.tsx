@@ -1,6 +1,6 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 
-import type { Note } from "./types/note.ts";
+import type { Note, NoteResponse } from "./types/note.ts";
 import type { AddNoteResponse } from "./types/responce.ts";
 
 import type { Tab } from "./models/tabs.ts";
@@ -17,6 +17,8 @@ import NoteEditor from "./components/NoteEditor";
 
 import Footer from "./components/Footer";
 
+import { api } from "./api/api.ts";
+
 function App() {
   const [editedNote, setEditedNote] = useState<null | Note | "new">(null);
   const [notes, setNotes] = useState<Note[]>([]);
@@ -24,7 +26,49 @@ function App() {
   const [activeTab, setActiveTab] = useState<Tab>("all");
   const [isRegistered, setIsRegistered] = useState(true);
 
-  const addNote = (note: Note): AddNoteResponse => {
+  useEffect(() => {
+    const checkRegistration = async () => {
+      try {
+        await api.get("/auth/me");
+        setIsRegistered(true);
+      } catch {
+        setIsRegistered(false);
+      }
+    };
+
+    const loadTasks = async () => {
+      try {
+        const response = await api.get<NoteResponse[]>("/notes");
+        const fetchedNotes: NoteResponse[] = response.data;
+
+        const notes = fetchedNotes.map((note) => ({
+          id: note._id,
+          category: note.category,
+          title: note.title,
+          text: note.text,
+          date: new Date(note.date),
+        }));
+
+        setNotes(notes);
+      } catch {
+        setNotes([]);
+      }
+    };
+
+    checkRegistration();
+    loadTasks();
+  }, []);
+
+  const logout = async () => {
+    try {
+      await api.post("/logout");
+      setIsRegistered(false);
+    } catch {
+      setIsRegistered(true);
+    }
+  };
+
+  const addNote = async (note: Note): Promise<AddNoteResponse> => {
     if (!note.title) {
       return { success: false, error: "Title must not be empty" };
     }
@@ -32,18 +76,37 @@ function App() {
       return { success: false, error: "Title must be unique" };
     }
 
-    setNotes((prev) => [...prev, note]);
-    setEditedNote(null);
-    return { success: true };
+    try {
+      const result = await api.post("/notes", note);
+      const createdNote = {
+        ...note,
+        id: result.data.id,
+      };
+      setNotes((prev) => [...prev, createdNote]);
+      setEditedNote(null);
+      return { success: true };
+    } catch {
+      return { success: false, error: "Something went wrong" };
+    }
   };
 
-  const updateNote = (updated: Note): void => {
-    setNotes((prev) => prev.map((n) => (n.id === updated.id ? updated : n)));
-    setEditedNote(null);
+  const updateNote = async (updated: Note): Promise<void> => {
+    try {
+      await api.put(`/notes/${updated.id}`, updated);
+      setNotes((prev) => prev.map((n) => (n.id === updated.id ? updated : n)));
+      setEditedNote(null);
+    } catch {
+      console.error("Something went wrong");
+    }
   };
 
-  const deleteNote = (id: string) => {
-    setNotes((prev) => prev.filter((n) => n.id !== id));
+  const deleteNote = async (id: string) => {
+    try {
+      await api.delete(`/notes/${id}`);
+      setNotes((prev) => prev.filter((n) => n.id !== id));
+    } catch {
+      console.error("Something went wrong");
+    }
   };
 
   const closeNoteEditor = () => {
@@ -52,14 +115,14 @@ function App() {
 
   /** Sorts notes array by date */
   const sortNotes = (notesList: Note[]) => {
-    return notesList.toSorted((a, b) => b.date.getTime()-a.date.getTime());
-  }
+    return notesList.toSorted((a, b) => b.date.getTime() - a.date.getTime());
+  };
 
   /** Filters notes array by active tab (category) */
   const filterNotesByTab = (notesList: Note[], tab: Tab) => {
     if (tab === "all") return notesList;
-    return notesList.filter(n => n.category === tab);
-  }
+    return notesList.filter((n) => n.category === tab);
+  };
 
   /** Filters notes array by search string */
   const searchNotes = (notesList: Note[], searchStr: string) => {
@@ -67,38 +130,40 @@ function App() {
     if (!searchStrLower) return notesList;
 
     return notesList.filter(
-      (n) => 
-        n.title.toLowerCase().includes(searchStrLower) 
-        || n.text.toLowerCase().includes(searchStrLower)
+      (n) =>
+        n.title.toLowerCase().includes(searchStrLower) ||
+        n.text.toLowerCase().includes(searchStrLower),
     );
-  }
+  };
 
   /** Notes filtered by search string, category and sorted by date */
   const processedNotes = useMemo(
-    () => sortNotes(
-      filterNotesByTab(
-        searchNotes(notes, searchString), 
-      activeTab)
-    ), 
-    [notes, searchString, activeTab]
+    () =>
+      sortNotes(filterNotesByTab(searchNotes(notes, searchString), activeTab)),
+    [notes, searchString, activeTab],
   );
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Navbar isRegistered={isRegistered} logOut={() => setIsRegistered(false)} />
+      <Navbar isRegistered={isRegistered} logOut={logout} />
 
-      {
-        isRegistered ?
-        (<>
+      {isRegistered ? (
+        <>
           <header className="bg-surface-elevated">
             <div className="w-full flex flex-col items-center pt-20 px-4">
               <h1 className="text-6xl sm:text-7xl inline-block pb-4 font-semibold bg-gradient-primary bg-clip-text text-transparent">
                 Notes App
               </h1>
-              <SearchBar value={searchString} onChange={(value: string) => setSearchString(value)} />
+              <SearchBar
+                value={searchString}
+                onChange={(value: string) => setSearchString(value)}
+              />
             </div>
 
-            <CategoryTabs activeTab={activeTab} switchTab={(tab) => setActiveTab(tab)} />
+            <CategoryTabs
+              activeTab={activeTab}
+              switchTab={(tab) => setActiveTab(tab)}
+            />
           </header>
 
           <main className="flex-1 bg-surface">
@@ -132,12 +197,10 @@ function App() {
               )}
             </div>
           </main>
-          </>
-        ) :
-        (
-          <RegistrationPanel />
-        )
-      }
+        </>
+      ) : (
+        <RegistrationPanel closeForm={() => setIsRegistered(true)} />
+      )}
 
       <Footer />
     </div>
